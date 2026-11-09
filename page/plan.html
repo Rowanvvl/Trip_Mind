@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TripMind · 行程</title>
+<style>
+  :root{
+    --paper:#FBF9F6; --surface:#FFFFFF; --sunk:#F5F2EC;
+    --ink:#1B1A17; --ink-2:#57534D; --ink-3:#736E66;
+    --line:#E6E1D9; --line-2:#F1EDE6;
+    --accent:#A8492B; --accent-2:#8C3A20; --accent-wash:#F7E9E2;
+    --ok:#3F6B4A; --warn:#8A5A12; --warn-wash:#FBF0DC; --err:#A33A2A;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+    --shadow:0 1px 2px rgba(27,26,23,.04), 0 10px 28px -20px rgba(27,26,23,.28);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#121110; --surface:#1A1917; --sunk:#151412;
+      --ink:#F2EFE9; --ink-2:#B9B3AA; --ink-3:#8E887F;
+      --line:#2C2A27; --line-2:#232120;
+      --accent:#D97757; --accent-2:#E89578; --accent-wash:#2A1F1A;
+      --ok:#7FA98A; --warn:#D6A45F; --warn-wash:#2A2216; --err:#E08675;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -20px rgba(0,0,0,.6);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font:15px/1.75 "PingFang SC","HarmonyOS Sans SC","Source Han Sans SC",-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100dvh}
+  .rail{
+    position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;
+    padding:22px 16px;border-right:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:9px;padding:0 8px 20px}
+  .brand b{font-size:15px;font-weight:600;letter-spacing:-.2px}
+  .brand i{width:20px;height:20px;border-radius:5px;background:var(--accent);display:grid;place-items:center}
+  .brand i svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav a{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);
+    color:var(--ink-2);text-decoration:none;font-size:14px;
+    transition:background .15s var(--ease),color .15s var(--ease);
+  }
+  .nav a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .nav a:hover{background:var(--sunk);color:var(--ink)}
+  .nav a.on{background:var(--accent-wash);color:var(--accent-2);font-weight:500}
+  .rail-note{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-3);line-height:1.7}
+
+  main{padding:44px 48px 64px}
+  .page-head{margin-bottom:26px}
+  .page-head h1{font-size:26px;letter-spacing:-.6px;font-weight:600;margin:0 0 8px}
+  .page-head p{margin:0;color:var(--ink-2);max-width:40em}
+
+  .bench{display:grid;grid-template-columns:336px minmax(0,1fr);gap:16px;align-items:start}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:20px;box-shadow:var(--shadow);
+  }
+  .form{position:sticky;top:24px}
+  .card h2{font-size:13px;font-weight:600;letter-spacing:.02em;margin:0 0 16px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid .wide{grid-column:1/-1}
+  label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:5px}
+  input,select,textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--paper);font:inherit;font-size:14px;color:var(--ink);outline:none;
+    transition:border-color .15s var(--ease);
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  input::placeholder,textarea::placeholder{color:var(--ink-3)}
+  textarea{min-height:72px;resize:vertical;line-height:1.6}
+  select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  button{
+    cursor:pointer;border:0;border-radius:var(--r-sm);padding:11px 18px;width:100%;
+    background:var(--accent);color:#fff;font:inherit;font-size:14px;font-weight:500;margin-top:16px;
+    transition:background .15s var(--ease),transform .12s var(--ease);
+  }
+  button:hover{background:var(--accent-2)}
+  button:active{transform:scale(.99)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .form .hint{margin:10px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+  .chip{
+    background:var(--paper);border:1px solid var(--line);color:var(--ink-2);
+    border-radius:var(--r-sm);padding:5px 9px;font-size:12px;font-variant-numeric:tabular-nums;
+  }
+  .chip.warn{background:var(--warn-wash);border-color:transparent;color:var(--warn)}
+
+  /* 成稿区 */
+  .doc{min-height:320px}
+  .doc .placeholder{color:var(--ink-3);font-size:13.5px;line-height:1.8;max-width:34em}
+  .doc .placeholder b{display:block;color:var(--ink-2);font-size:14px;font-weight:500;margin-bottom:6px}
+  .doc .skeleton{display:grid;gap:10px;margin-top:18px}
+  .doc .skeleton i{display:block;height:11px;border-radius:3px;background:var(--line-2)}
+  .doc .skeleton i:nth-child(2){width:82%}
+  .doc .skeleton i:nth-child(3){width:64%}
+
+  .out h1{font-size:22px;letter-spacing:-.4px;font-weight:600;margin:0 0 6px}
+  .out h2{
+    font-size:13px;font-weight:600;letter-spacing:.02em;margin:28px 0 10px;
+    padding-bottom:7px;border-bottom:1px solid var(--line-2);color:var(--ink);
+  }
+  .out h2:first-of-type{margin-top:18px}
+  .out p{margin:0 0 10px;max-width:68ch;line-height:1.8}
+  .out ul{margin:0 0 10px;padding-left:0;list-style:none}
+  .out li{
+    position:relative;padding-left:16px;margin:6px 0;max-width:68ch;line-height:1.75;
+    font-size:14.5px;
+  }
+  .out li::before{content:"";position:absolute;left:2px;top:11px;width:4px;height:4px;border-radius:50%;background:var(--line)}
+  .out blockquote{
+    margin:16px 0 0;padding:12px 14px;background:var(--warn-wash);color:var(--warn);
+    border-radius:var(--r-sm);font-size:13px;line-height:1.7;
+  }
+  .out blockquote + blockquote{margin-top:6px}
+  .out em{color:var(--ink-3);font-style:normal;font-size:12.5px}
+
+  @media (max-width:1100px){
+    .shell{grid-template-columns:1fr}
+    .rail{
+      position:sticky;top:0;height:auto;z-index:20;flex-direction:row;align-items:center;
+      justify-content:space-between;padding:10px 16px;border-right:0;border-bottom:1px solid var(--line);
+    }
+    .brand{padding:0}
+    .nav{flex-direction:row;gap:4px}
+    .nav a{padding:6px 9px;font-size:13px}
+    .nav a span{display:none}
+    .rail-note{display:none}
+    main{padding:28px 20px 48px}
+    .bench{grid-template-columns:1fr}
+    .form{position:static}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <i><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg></i>
+      <b>TripMind</b>
+    </div>
+    <nav class="nav">
+      <a href="/">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>问答</span>
+      </a>
+      <a href="/import">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <span>导入</span>
+      </a>
+      <a class="on" href="/plan">
+        <svg viewBox="0 0 24 24"><path d="M9 3l6 4 6-4v14l-6 4-6-4-6 4V7z"/><path d="M9 3v14"/><path d="M15 7v14"/></svg>
+        <span>行程</span>
+      </a>
+    </nav>
+    <p class="rail-note">同一天不跨片区。预报有雨时，户外点位会换成室内备选，换过哪些会在成稿里写出来。</p>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <h1>排一份能照着走的行程</h1>
+      <p>左侧定城市与天数，或直接在补充要求里写一句话。右侧出稿，排不进去的点位会单独列出，不会静默丢掉。</p>
+    </div>
+
+    <div class="bench">
+      <section class="card form">
+        <h2>参数</h2>
+        <div class="grid">
+          <div><label>城市</label><input id="city" value="三亚" /></div>
+          <div><label>天数</label><input id="days" type="number" value="3" min="1" max="10" /></div>
+          <div><label>人数</label><input id="travelers" type="number" value="2" min="1" /></div>
+          <div><label>预算（元）</label><input id="budget" type="number" placeholder="可空" /></div>
+          <div><label>开始日期</label><input id="start" type="date" /></div>
+          <div><label>节奏</label>
+            <select id="pace"><option>轻松</option><option selected>适中</option><option>紧凑</option></select>
+          </div>
+          <div class="wide">
+            <label>补充要求</label>
+            <textarea id="query" placeholder="例如：带两位老人，不想爬山，必去蜈支洲岛，不吃辣"></textarea>
+          </div>
+        </div>
+        <button id="go">生成行程</button>
+        <p class="hint">预算只给区间与假设，票价以景区当日公示为准。</p>
+      </section>
+
+      <section class="card">
+        <div class="chips" id="chips" style="display:none"></div>
+        <div class="doc out" id="outCard">
+          <div class="placeholder">
+            <b>成稿会出现在这里</b>
+            每天一段，含当天点位顺序、车程、用餐建议与预算拆分。若某个点排不进去，会在末尾单列。
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const sessionId = localStorage.getItem("tm_session") || ("s_" + Math.random().toString(36).slice(2, 10));
+localStorage.setItem("tm_session", sessionId);
+
+$("go").onclick = async () => {
+  $("go").disabled = true;
+  $("go").textContent = "排布中";
+  $("chips").style.display = "none";
+  $("outCard").innerHTML = '<div class="skeleton"><i></i><i></i><i></i></div>';
+
+  const payload = {
+    session_id: sessionId,
+    query: $("query").value.trim(),
+    city: $("city").value.trim() || null,
+    days: parseInt($("days").value || "3", 10),
+    travelers: parseInt($("travelers").value || "2", 10),
+    budget: $("budget").value ? parseFloat($("budget").value) : null,
+    start_date: $("start").value || null,
+    pace: $("pace").value
+  };
+
+  let resp;
+  try {
+    resp = await fetch("/plan", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    $("outCard").innerHTML = `<div class="placeholder"><b>没能连上服务</b>${err.message}</div>`;
+    $("go").disabled = false; $("go").textContent = "生成行程";
+    return;
+  }
+
+  $("go").disabled = false;
+  $("go").textContent = "生成行程";
+
+  if (!resp.ok) {
+    $("outCard").innerHTML = `<div class="placeholder"><b>生成失败</b>${await resp.text()}</div>`;
+    return;
+  }
+  const data = await resp.json();
+  renderMeta(data);
+  $("outCard").innerHTML = md(data.markdown || "（后端返回了空内容）");
+};
+
+function renderMeta(data) {
+  const chips = [];
+  chips.push(`<span class="chip">${data.city} · ${data.days} 天</span>`);
+  if (data.budget && data.budget.total) {
+    chips.push(`<span class="chip">预算 ${data.budget.total[0]}–${data.budget.total[1]} 元</span>`);
+  }
+  (data.errors || []).forEach(e => chips.push(`<span class="chip warn">第 ${e.day} 天：${e.detail}</span>`));
+  (data.warnings || []).forEach(w => chips.push(`<span class="chip warn">第 ${w.day} 天：${w.detail}</span>`));
+  if (data.degraded) chips.push('<span class="chip warn">部分数据未取到</span>');
+  $("chips").innerHTML = chips.join("");
+  $("chips").style.display = "flex";
+}
+
+/* 极简 Markdown 渲染：标题、列表、引用、加粗，够用且无依赖 */
+function md(src) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const lines = esc(src).split("\n");
+  let html = "", inList = false;
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (!line.trim()) { if (inList) { html += "</ul>"; inList = false; } continue; }
+    if (line.startsWith("- ")) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${line.slice(2).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")}</li>`;
+      continue;
+    }
+    if (inList) { html += "</ul>"; inList = false; }
+    if (line.startsWith("## ")) html += `<h2>${line.slice(3)}</h2>`;
+    else if (line.startsWith("# ")) html += `<h1>${line.slice(2)}</h1>`;
+    else if (line.startsWith("> ")) html += `<blockquote>${line.slice(2)}</blockquote>`;
+    else if (line.startsWith("*") && line.endsWith("*")) html += `<p><em>${line.slice(1, -1)}</em></p>`;
+    else html += `<p>${line.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")}</p>`;
+  }
+  if (inList) html += "</ul>";
+  return html;
+}
+</script>
+</body>
+</html>

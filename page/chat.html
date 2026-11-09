@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TripMind · 问答</title>
+<style>
+  :root{
+    --paper:#FBF9F6; --surface:#FFFFFF; --sunk:#F5F2EC;
+    --ink:#1B1A17; --ink-2:#57534D; --ink-3:#736E66;
+    --line:#E6E1D9; --line-2:#F1EDE6;
+    --accent:#A8492B; --accent-2:#8C3A20; --accent-wash:#F7E9E2;
+    --ok:#3F6B4A; --warn:#8A5A12; --warn-wash:#FBF0DC;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+    --shadow:0 1px 2px rgba(27,26,23,.04), 0 10px 28px -20px rgba(27,26,23,.28);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#121110; --surface:#1A1917; --sunk:#151412;
+      --ink:#F2EFE9; --ink-2:#B9B3AA; --ink-3:#8E887F;
+      --line:#2C2A27; --line-2:#232120;
+      --accent:#D97757; --accent-2:#E89578; --accent-wash:#2A1F1A;
+      --ok:#7FA98A; --warn:#D6A45F; --warn-wash:#2A2216;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -20px rgba(0,0,0,.6);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font:15px/1.75 "PingFang SC","HarmonyOS Sans SC","Source Han Sans SC",-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-wash);color:var(--accent-2)}
+  .shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100dvh}
+
+  /* ---------- 左栏 ---------- */
+  .rail{
+    position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;
+    padding:22px 16px;border-right:1px solid var(--line);background:var(--paper);
+  }
+  .brand{display:flex;align-items:center;gap:9px;padding:0 8px 20px}
+  .brand b{font-size:15px;font-weight:600;letter-spacing:-.2px}
+  .brand i{width:20px;height:20px;border-radius:5px;background:var(--accent);display:grid;place-items:center}
+  .brand i svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav a{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);
+    color:var(--ink-2);text-decoration:none;font-size:14px;
+    transition:background .15s var(--ease),color .15s var(--ease);
+  }
+  .nav a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .nav a:hover{background:var(--sunk);color:var(--ink)}
+  .nav a.on{background:var(--accent-wash);color:var(--accent-2);font-weight:500}
+  .rail-foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-3)}
+  .rail-foot .sid{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .rail-foot button{
+    margin-top:8px;background:none;border:0;padding:0;color:var(--ink-3);
+    font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+  }
+  .rail-foot button:hover{color:var(--accent-2)}
+
+  /* ---------- 舞台 ---------- */
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 312px;grid-template-rows:1fr auto;min-height:100dvh}
+  .thread{grid-column:1;grid-row:1;overflow-y:auto;padding:44px 48px 28px}
+  .inner{max-width:680px;margin:0 auto}
+
+  /* 空态 */
+  .empty{padding-top:6vh}
+  .empty h1{
+    font-size:30px;line-height:1.25;letter-spacing:-.8px;font-weight:600;
+    margin:0 0 12px;max-width:15em;
+  }
+  .empty .lede{margin:0 0 34px;color:var(--ink-2);max-width:34em}
+  .suggest{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-2);border:1px solid var(--line-2);border-radius:var(--r-md);overflow:hidden}
+  .suggest li{background:var(--paper)}
+  .suggest button{
+    width:100%;display:flex;align-items:baseline;gap:10px;text-align:left;
+    padding:13px 14px;background:none;border:0;cursor:pointer;font:inherit;color:var(--ink);
+    transition:background .15s var(--ease);
+  }
+  .suggest button:hover{background:var(--accent-wash)}
+  .suggest .s-city{font-size:12px;color:var(--accent-2);flex:none;letter-spacing:.02em}
+  .suggest .s-q{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+  .suggest button:hover .s-q{color:var(--ink)}
+  .empty .foot{margin:22px 0 0;font-size:12.5px;color:var(--ink-3);max-width:40em}
+
+  /* 提问回显 */
+  .ask{
+    margin:0 0 26px;padding:0 0 0 14px;border-left:2px solid var(--accent);
+    font-size:16px;line-height:1.6;color:var(--ink);letter-spacing:-.1px;
+  }
+  /* 进度 */
+  .progress{margin:0 0 24px}
+  .progress-line{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--ink-3);margin-bottom:7px}
+  .progress-line .pct{font-variant-numeric:tabular-nums}
+  .progress-track{height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+  .progress-track i{display:block;height:100%;width:0;background:var(--accent);transition:width .24s var(--ease)}
+  /* 回答 */
+  .turn-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .turn-head .who{font-size:12px;letter-spacing:.08em;color:var(--accent-2);font-weight:500}
+  .turn-head .sep{flex:1;height:1px;background:var(--line-2)}
+  .answer{white-space:pre-wrap;max-width:66ch;font-size:15px;line-height:1.85;color:var(--ink)}
+  .answer sup.ref{
+    font-size:10.5px;color:var(--accent-2);background:var(--accent-wash);
+    padding:1px 4px;border-radius:3px;margin:0 1px;font-variant-numeric:tabular-nums;
+  }
+  .answer b{font-weight:600}
+
+  /* ---------- 右栏 ---------- */
+  .inspector{
+    grid-column:2;grid-row:1;border-left:1px solid var(--line);
+    padding:32px 22px;overflow-y:auto;background:var(--paper);
+  }
+  .inspector h2{
+    font-size:11px;letter-spacing:.1em;color:var(--ink-3);font-weight:500;
+    margin:0 0 10px;text-transform:uppercase;
+  }
+  .block{margin-bottom:28px}
+  .block:empty{display:none}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    background:var(--surface);border:1px solid var(--line);color:var(--ink-2);
+    border-radius:var(--r-sm);padding:5px 9px;font-size:12px;line-height:1.45;
+  }
+  .chip.warn{background:var(--warn-wash);border-color:transparent;color:var(--warn)}
+  ol.cites{list-style:none;margin:0;padding:0;counter-reset:c}
+  ol.cites li{
+    position:relative;padding:0 0 12px 22px;font-size:12.5px;line-height:1.6;color:var(--ink-2);
+    counter-increment:c;
+  }
+  ol.cites li::before{
+    content:counter(c);position:absolute;left:0;top:2px;
+    width:15px;height:15px;border-radius:3px;background:var(--accent-wash);color:var(--accent-2);
+    font-size:10px;display:grid;place-items:center;font-variant-numeric:tabular-nums;
+  }
+  .imgs{display:grid;gap:10px}
+  .imgs figure{margin:0}
+  .imgs img{width:100%;height:104px;object-fit:cover;border-radius:var(--r-sm);background:var(--sunk);display:block}
+  .imgs figcaption{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+  .idle{font-size:12.5px;color:var(--ink-3);line-height:1.7}
+
+  /* ---------- 输入 ---------- */
+  .composer{
+    grid-column:1/-1;grid-row:2;position:sticky;bottom:0;
+    padding:14px 48px 18px;border-top:1px solid var(--line);
+    background:var(--paper);
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(8px);
+  }
+  .composer-in{max-width:680px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+  textarea{
+    flex:1;min-height:52px;max-height:180px;resize:none;padding:14px 15px;
+    border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);
+    font:inherit;color:var(--ink);outline:none;box-shadow:var(--shadow);
+    transition:border-color .15s var(--ease);
+  }
+  textarea::placeholder{color:var(--ink-3)}
+  textarea:focus{border-color:var(--accent)}
+  .send{
+    flex:none;width:44px;height:44px;border:0;border-radius:var(--r-md);cursor:pointer;
+    background:var(--accent);color:#fff;display:grid;place-items:center;
+    transition:transform .12s var(--ease),background .15s var(--ease);
+  }
+  .send svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .send:hover{background:var(--accent-2)}
+  .send:active{transform:scale(.97)}
+  .send:disabled{opacity:.45;cursor:not-allowed}
+  .composer .tip{margin:9px 0 0;font-size:11.5px;color:var(--ink-3);text-align:center}
+  .composer .tip kbd{
+    font:inherit;background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+  }
+
+  .hidden{display:none !important}
+
+  @media (max-width:1100px){
+    .shell{grid-template-columns:1fr}
+    .rail{
+      position:sticky;top:0;height:auto;z-index:20;flex-direction:row;align-items:center;
+      justify-content:space-between;padding:10px 16px;border-right:0;border-bottom:1px solid var(--line);
+    }
+    .brand{padding:0}
+    .nav{flex-direction:row;gap:4px}
+    .nav a{padding:6px 9px;font-size:13px}
+    .nav a span{display:none}
+    .rail-foot{display:none}
+    .stage{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto auto;min-height:0}
+    .thread{grid-column:1;grid-row:1;padding:28px 20px 20px;overflow:visible}
+    .inspector{grid-column:1;grid-row:2;border-left:0;border-top:1px solid var(--line);padding:22px 20px}
+    .composer{grid-column:1;grid-row:3;padding:12px 16px 16px}
+    .empty h1{font-size:25px}
+    .suggest{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <i><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg></i>
+      <b>TripMind</b>
+    </div>
+    <nav class="nav">
+      <a class="on" href="/">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>问答</span>
+      </a>
+      <a href="/import">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <span>导入</span>
+      </a>
+      <a href="/plan">
+        <svg viewBox="0 0 24 24"><path d="M9 3l6 4 6-4v14l-6 4-6-4-6 4V7z"/><path d="M9 3v14"/><path d="M15 7v14"/></svg>
+        <span>行程</span>
+      </a>
+    </nav>
+    <div class="rail-foot">
+      <div>会话</div>
+      <div class="sid" id="sidLabel">-</div>
+      <button id="newChat">换一个会话</button>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="thread">
+      <div class="inner">
+
+        <section class="empty" id="empty">
+          <h1>先问一句，再上路。</h1>
+          <p class="lede">写下目的地和天数就够了。回答会带上攻略原文出处，天气与票价从实时接口取，预算按当地价目表给区间。</p>
+          <ul class="suggest" id="suggest">
+            <li><button data-q="三亚五天带老人怎么安排，住哪比较合适"><span class="s-city">三亚</span><span class="s-q">五天带老人怎么排，住哪合适</span></button></li>
+            <li><button data-q="成都两天纯吃，不想打车"><span class="s-city">成都</span><span class="s-q">两天纯吃，不想打车</span></button></li>
+            <li><button data-q="西安兵马俑怎么去，要多久"><span class="s-city">西安</span><span class="s-q">兵马俑怎么去，要多久</span></button></li>
+            <li><button data-q="北京三天带小孩，不爬长城"><span class="s-city">北京</span><span class="s-q">三天带小孩，不爬长城</span></button></li>
+            <li><button data-q="杭州下雨的话有哪些室内去处"><span class="s-city">杭州</span><span class="s-q">下雨有哪些室内去处</span></button></li>
+            <li><button data-q="厦门鼓浪屿住岛上还是岛外"><span class="s-city">厦门</span><span class="s-q">鼓浪屿住岛上还是岛外</span></button></li>
+          </ul>
+          <p class="foot">目前可答 14 座城市：三亚、成都、云南、杭州、厦门、张家界、重庆、北京、上海、西安、广州、南京、武汉、长沙。</p>
+        </section>
+
+        <div class="ask hidden" id="askCard"><p id="askText" style="margin:0"></p></div>
+
+        <div class="progress hidden" id="progressCard">
+          <div class="progress-line">
+            <span id="progressLabel">准备中</span>
+            <span class="pct" id="progressPct">0%</span>
+          </div>
+          <div class="progress-track"><i id="bar"></i></div>
+        </div>
+
+        <article id="answerCard" class="hidden">
+          <div class="turn-head">
+            <span class="who">回答</span>
+            <span class="sep"></span>
+          </div>
+          <div class="answer" id="answer"></div>
+        </article>
+
+      </div>
+    </div>
+
+    <aside class="inspector">
+      <div class="block" id="factsCard" style="display:none">
+        <h2>实时数据</h2>
+        <div class="chips" id="facts"></div>
+      </div>
+      <div class="block" id="citesCard" style="display:none">
+        <h2>引用来源</h2>
+        <ol class="cites" id="cites"></ol>
+      </div>
+      <div class="block" id="imgCard" style="display:none">
+        <h2>配图</h2>
+        <div class="imgs" id="imgs"></div>
+      </div>
+      <p class="idle" id="idleNote">提问后，这里会显示这轮用到的实时数据、原文出处和配图。</p>
+    </aside>
+
+    <div class="composer">
+      <div class="composer-in">
+        <textarea id="q" rows="1" placeholder="例如：三亚五天带老人怎么安排，住哪比较合适"></textarea>
+        <button class="send" id="send" aria-label="提问">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+      <p class="tip">回车发送，<kbd>Shift</kbd> + <kbd>回车</kbd> 换行</p>
+    </div>
+  </main>
+</div>
+
+<script>
+const sessionId = localStorage.getItem("tm_session") || ("s_" + Math.random().toString(36).slice(2, 10));
+localStorage.setItem("tm_session", sessionId);
+
+const $ = (id) => document.getElementById(id);
+let es = null;
+
+$("sidLabel").textContent = sessionId.slice(0, 12);
+$("newChat").onclick = () => {
+  localStorage.removeItem("tm_session");
+  location.reload();
+};
+
+const ta = $("q");
+ta.addEventListener("input", () => {
+  ta.style.height = "auto";
+  ta.style.height = Math.min(ta.scrollHeight, 180) + "px";
+});
+ta.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); }
+});
+$("send").onclick = ask;
+
+$("suggest").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-q]");
+  if (!btn) return;
+  ta.value = btn.dataset.q;
+  ta.dispatchEvent(new Event("input"));
+  ask();
+});
+
+async function ask() {
+  const query = ta.value.trim();
+  if (!query || $("send").disabled) return;
+
+  resetUI();
+  $("empty").classList.add("hidden");
+  $("askText").textContent = query;
+  $("askCard").classList.remove("hidden");
+  $("answerCard").classList.remove("hidden");
+  $("answer").textContent = "";
+  $("idleNote").style.display = "none";
+  $("send").disabled = true;
+
+  const resp = await fetch("/query", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({session_id: sessionId, query, is_stream: true})
+  });
+  if (!resp.ok) {
+    $("answer").textContent = "请求失败：" + (await resp.text());
+    $("send").disabled = false;
+    return;
+  }
+  const meta = await resp.json();
+  window.__trace = meta.trace_id;
+
+  es = new EventSource("/stream/" + encodeURIComponent(sessionId));
+  es.addEventListener("ready", () => $("progressCard").classList.remove("hidden"));
+  es.addEventListener("progress", (e) => {
+    const d = JSON.parse(e.data);
+    $("bar").style.width = d.percent + "%";
+    $("progressPct").textContent = d.percent + "%";
+    $("progressLabel").textContent = d.label + (d.status === "done" ? "" : "…");
+  });
+  es.addEventListener("delta", (e) => {
+    $("answer").textContent += JSON.parse(e.data).text;
+  });
+  es.addEventListener("citations", (e) => renderCites(JSON.parse(e.data).items));
+  es.addEventListener("facts", (e) => renderFacts(JSON.parse(e.data)));
+  es.addEventListener("images", (e) => renderImages(JSON.parse(e.data).items));
+  es.addEventListener("error", (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      $("answer").textContent += "\n\n[错误] " + d.message;
+    } catch (_) {}
+  });
+  es.addEventListener("final", (e) => {
+    const d = JSON.parse(e.data);
+    $("answer").innerHTML = formatAnswer(d.answer || "");
+    $("bar").style.width = "100%";
+    $("progressPct").textContent = "100%";
+    $("progressLabel").textContent = d.degraded ? "完成，部分数据未取到" : "完成";
+    es.close();
+    $("send").disabled = false;
+  });
+  es.addEventListener("__close__", () => { es.close(); $("send").disabled = false; });
+  es.onerror = () => { if (es) es.close(); $("send").disabled = false; };
+}
+
+/* 把 [1] 这类角标转成小标签；先转义，避免回答里的尖括号被当成标签 */
+function formatAnswer(text) {
+  const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(/\[(\d{1,2})\]/g, '<sup class="ref">$1</sup>');
+}
+
+function resetUI() {
+  ["progressCard", "askCard", "answerCard"].forEach(id => $(id).classList.add("hidden"));
+  ["factsCard", "citesCard", "imgCard"].forEach(id => $(id).style.display = "none");
+  $("bar").style.width = "0";
+  $("progressPct").textContent = "0%";
+  $("facts").innerHTML = "";
+  $("cites").innerHTML = "";
+  $("imgs").innerHTML = "";
+  $("idleNote").style.display = "block";
+}
+
+function renderCites(items) {
+  if (!items || !items.length) return;
+  $("citesCard").style.display = "block";
+  $("cites").innerHTML = items.map(it => {
+    const head = [it.city, it.doc_title].filter(Boolean).join(" · ");
+    const sec = it.section ? `<br><span style="color:var(--ink-3)">${it.section}</span>` : "";
+    return `<li>${head}${sec}</li>`;
+  }).join("");
+}
+
+function renderFacts(d) {
+  const chips = [];
+  (d.route || []).forEach(t => chips.push(`<span class="chip">${t}</span>`));
+  if (d.weather) chips.push(`<span class="chip">${d.weather}</span>`);
+  (d.budget || []).forEach(t => chips.push(`<span class="chip">${t}</span>`));
+  if (d.degraded) chips.push('<span class="chip warn">部分实时数据未取到</span>');
+  if (!chips.length) return;
+  $("factsCard").style.display = "block";
+  $("facts").innerHTML = chips.join("");
+}
+
+function renderImages(items) {
+  if (!items || !items.length) return;
+  $("imgCard").style.display = "block";
+  $("imgs").innerHTML = items.map(it =>
+    `<figure><img src="${it.url}" loading="lazy" alt="${it.caption || ""}" onerror="this.style.opacity=.25">
+     <figcaption>${it.caption || ""}${it.source ? "　来源：" + it.source : ""}</figcaption></figure>`).join("");
+}
+</script>
+</body>
+</html>

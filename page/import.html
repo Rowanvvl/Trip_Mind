@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TripMind · 导入</title>
+<style>
+  :root{
+    --paper:#FBF9F6; --surface:#FFFFFF; --sunk:#F5F2EC;
+    --ink:#1B1A17; --ink-2:#57534D; --ink-3:#736E66;
+    --line:#E6E1D9; --line-2:#F1EDE6;
+    --accent:#A8492B; --accent-2:#8C3A20; --accent-wash:#F7E9E2;
+    --ok:#3F6B4A; --warn:#8A5A12; --warn-wash:#FBF0DC; --err:#A33A2A;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+    --shadow:0 1px 2px rgba(27,26,23,.04), 0 10px 28px -20px rgba(27,26,23,.28);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#121110; --surface:#1A1917; --sunk:#151412;
+      --ink:#F2EFE9; --ink-2:#B9B3AA; --ink-3:#8E887F;
+      --line:#2C2A27; --line-2:#232120;
+      --accent:#D97757; --accent-2:#E89578; --accent-wash:#2A1F1A;
+      --ok:#7FA98A; --warn:#D6A45F; --warn-wash:#2A2216; --err:#E08675;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -20px rgba(0,0,0,.6);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font:15px/1.75 "PingFang SC","HarmonyOS Sans SC","Source Han Sans SC",-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100dvh}
+  .rail{
+    position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;
+    padding:22px 16px;border-right:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:9px;padding:0 8px 20px}
+  .brand b{font-size:15px;font-weight:600;letter-spacing:-.2px}
+  .brand i{width:20px;height:20px;border-radius:5px;background:var(--accent);display:grid;place-items:center}
+  .brand i svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav a{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);
+    color:var(--ink-2);text-decoration:none;font-size:14px;
+    transition:background .15s var(--ease),color .15s var(--ease);
+  }
+  .nav a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .nav a:hover{background:var(--sunk);color:var(--ink)}
+  .nav a.on{background:var(--accent-wash);color:var(--accent-2);font-weight:500}
+  .rail-note{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-3);line-height:1.7}
+
+  main{padding:44px 48px 64px}
+  .wrap{max-width:940px;margin:0 auto}
+  .page-head{margin-bottom:30px}
+  .page-head h1{font-size:26px;letter-spacing:-.6px;font-weight:600;margin:0 0 8px}
+  .page-head p{margin:0;color:var(--ink-2);max-width:38em}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:20px;box-shadow:var(--shadow);
+  }
+  .card h2{font-size:13px;font-weight:600;letter-spacing:.02em;margin:0 0 4px}
+  .card .sub{font-size:12.5px;color:var(--ink-3);margin:0 0 16px;line-height:1.6}
+  .field{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  input[type=text]{
+    flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--paper);font:inherit;color:var(--ink);outline:none;
+    transition:border-color .15s var(--ease);
+  }
+  input[type=text]:focus{border-color:var(--accent)}
+  input[type=text]::placeholder{color:var(--ink-3)}
+  input[type=file]{
+    font:inherit;font-size:13px;color:var(--ink-2);width:100%;padding:8px 0;
+  }
+  input[type=file]::file-selector-button{
+    font:inherit;font-size:13px;padding:7px 12px;margin-right:10px;cursor:pointer;
+    border:1px solid var(--line);border-radius:var(--r-sm);background:var(--paper);color:var(--ink-2);
+  }
+  .check{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+  .check input{accent-color:var(--accent)}
+  button{
+    cursor:pointer;border:0;border-radius:var(--r-sm);padding:10px 16px;
+    background:var(--accent);color:#fff;font:inherit;font-size:13.5px;font-weight:500;
+    transition:background .15s var(--ease),transform .12s var(--ease);
+  }
+  button:hover{background:var(--accent-2)}
+  button:active{transform:scale(.97)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  button.ghost{background:var(--paper);color:var(--ink-2);border:1px solid var(--line)}
+  button.ghost:hover{background:var(--sunk);color:var(--ink)}
+  button.mini{padding:5px 10px;font-size:12px}
+
+  .note{
+    display:none;margin-bottom:14px;padding:9px 12px;border-radius:var(--r-sm);
+    background:var(--warn-wash);color:var(--warn);font-size:13px;
+  }
+  .note.show{display:block}
+
+  .queue-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .queue-head h2{margin:0}
+  .queue-head .count{font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{
+    text-align:left;padding:0 8px 9px;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--line);
+  }
+  td{padding:12px 8px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  td.id{font-variant-numeric:tabular-nums;color:var(--ink-3);font-size:12px;letter-spacing:.02em}
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:2px 8px;border-radius:var(--r-sm)}
+  .tag::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+  .tag.ok{background:rgba(63,107,74,.1);color:var(--ok)}
+  .tag.run{background:var(--accent-wash);color:var(--accent-2)}
+  .tag.err{background:var(--warn-wash);color:var(--err)}
+  .bar{height:2px;background:var(--line);border-radius:2px;overflow:hidden;width:110px}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .24s var(--ease)}
+  .muted{color:var(--ink-3)}
+  .empty-row td{padding:26px 8px;color:var(--ink-3);font-size:13px;text-align:center}
+  .empty-row b{display:block;color:var(--ink-2);font-weight:500;margin-bottom:3px}
+
+  @media (max-width:1100px){
+    .shell{grid-template-columns:1fr}
+    .rail{
+      position:sticky;top:0;height:auto;z-index:20;flex-direction:row;align-items:center;
+      justify-content:space-between;padding:10px 16px;border-right:0;border-bottom:1px solid var(--line);
+    }
+    .brand{padding:0}
+    .nav{flex-direction:row;gap:4px}
+    .nav a{padding:6px 9px;font-size:13px}
+    .nav a span{display:none}
+    .rail-note{display:none}
+    main{padding:28px 20px 48px}
+    .cols{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <i><svg viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg></i>
+      <b>TripMind</b>
+    </div>
+    <nav class="nav">
+      <a href="/">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>问答</span>
+      </a>
+      <a class="on" href="/import">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+        <span>导入</span>
+      </a>
+      <a href="/plan">
+        <svg viewBox="0 0 24 24"><path d="M9 3l6 4 6-4v14l-6 4-6-4-6 4V7z"/><path d="M9 3v14"/><path d="M15 7v14"/></svg>
+        <span>行程</span>
+      </a>
+    </nav>
+    <p class="rail-note">每个文件独立成一个任务，单个失败不影响其它。重复导入会先删同源旧切片。</p>
+  </aside>
+
+  <main>
+    <div class="wrap">
+      <div class="page-head">
+        <h1>把攻略喂进知识库</h1>
+        <p>目录下所有 .md 逐个导入，走切分、向量化、入库三步。PDF 需要先在环境变量里打开 MinerU。</p>
+      </div>
+
+      <div class="note" id="note"></div>
+
+      <div class="cols">
+        <section class="card">
+          <h2>扫描语料目录</h2>
+          <p class="sub">留空表示 <code>data/</code>，也可以填绝对路径。</p>
+          <div class="field">
+            <input id="path" type="text" placeholder="D:/数据/旅游" />
+            <button id="scan">开始扫描</button>
+          </div>
+          <label class="check" style="margin-top:12px"><input type="checkbox" id="force" /> 强制重导已有文件</label>
+        </section>
+
+        <section class="card">
+          <h2>上传单个文件</h2>
+          <p class="sub">支持 .md、.markdown、.pdf。上传后立刻进入队列。</p>
+          <div class="field">
+            <input id="file" type="file" accept=".md,.markdown,.pdf" />
+          </div>
+          <button class="ghost" id="upload" style="margin-top:12px">上传并导入</button>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="queue-head">
+          <h2>任务队列</h2>
+          <span class="count" id="count">0 个任务</span>
+        </div>
+        <table>
+          <thead><tr><th>任务</th><th>状态</th><th>进度</th><th>当前节点</th><th></th></tr></thead>
+          <tbody id="tasks"><tr class="empty-row"><td colspan="5"><b>还没有任务</b>先扫描目录，或上传一份 Markdown</td></tr></tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const tasks = new Map();
+let timer = null;
+
+function notify(msg) {
+  const n = $("note");
+  n.textContent = msg;
+  n.classList.add("show");
+  if (notify._t) clearTimeout(notify._t);
+  notify._t = setTimeout(() => n.classList.remove("show"), 6000);
+}
+
+$("scan").onclick = async () => {
+  $("scan").disabled = true;
+  const resp = await fetch("/import/scan", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({path: $("path").value.trim() || null, force: $("force").checked})
+  });
+  $("scan").disabled = false;
+  if (!resp.ok) { notify("扫描失败：" + await resp.text()); return; }
+  const data = await resp.json();
+  if (!data.task_ids.length) { notify("这个目录下没有可导入的 .md 或 .pdf"); return; }
+  data.task_ids.forEach(id => tasks.set(id, {id, status: "pending", percent: 0, label: ""}));
+  render(); startPolling();
+};
+
+$("upload").onclick = async () => {
+  const file = $("file").files[0];
+  if (!file) { notify("先选一个文件"); return; }
+  const form = new FormData();
+  form.append("file", file);
+  const resp = await fetch("/import/upload", {method: "POST", body: form});
+  if (!resp.ok) { notify("上传失败：" + await resp.text()); return; }
+  const data = await resp.json();
+  data.task_ids.forEach(id => tasks.set(id, {status: "pending", percent: 0, label: "", id}));
+  render(); startPolling();
+};
+
+function startPolling() {
+  if (timer) return;
+  timer = setInterval(async () => {
+    let alive = false;
+    for (const id of tasks.keys()) {
+      const t = tasks.get(id);
+      if (t.status === "completed" || t.status === "failed") continue;
+      const resp = await fetch("/import/status/" + id);
+      if (!resp.ok) continue;
+      const d = await resp.json();
+      tasks.set(id, {
+        id, status: d.status, percent: d.percent,
+        label: (d.running && d.running[0]) || "",
+        error: d.error
+      });
+      if (d.status !== "completed" && d.status !== "failed") alive = true;
+    }
+    render();
+    if (!alive) { clearInterval(timer); timer = null; }
+  }, 1200);
+}
+
+function render() {
+  const body = $("tasks");
+  $("count").textContent = tasks.size + " 个任务";
+  if (!tasks.size) {
+    body.innerHTML = '<tr class="empty-row"><td colspan="5"><b>还没有任务</b>先扫描目录，或上传一份 Markdown</td></tr>';
+    return;
+  }
+  body.innerHTML = [...tasks.values()].map(t => {
+    const tag = t.status === "completed" ? '<span class="tag ok">完成</span>'
+              : t.status === "failed" ? '<span class="tag err">失败</span>'
+              : '<span class="tag run">处理中</span>';
+    const action = t.status === "failed"
+      ? `<button class="ghost mini" onclick="retry('${t.id}')">重试</button>` : "";
+    const err = t.error ? `<div class="muted" style="font-size:12px;line-height:1.5;margin-top:4px">${t.error}</div>` : "";
+    return `<tr>
+      <td class="id">${t.id.slice(0, 8)}</td>
+      <td>${tag}${err}</td>
+      <td><div class="bar"><i style="width:${t.percent}%"></i></div></td>
+      <td class="muted" style="font-size:12.5px">${t.label || "排队中"}</td>
+      <td style="text-align:right">${action}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function retry(id) {
+  const resp = await fetch("/import/retry/" + id, {method: "POST"});
+  if (!resp.ok) { notify("重试失败：" + await resp.text()); return; }
+  const t = tasks.get(id);
+  tasks.set(id, {...t, status: "processing", percent: 0, error: null});
+  render(); startPolling();
+}
+</script>
+</body>
+</html>
